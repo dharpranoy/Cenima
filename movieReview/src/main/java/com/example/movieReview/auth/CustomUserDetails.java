@@ -9,10 +9,16 @@ public class CustomUserDetails implements UserDetails {
 
         private String username;
         private String password;
-        private List<GrantedAuthority> authorities;
+        private Collection<? extends GrantedAuthority> authorities;
 
         public CustomUserDetails() {
 
+        }
+
+        public CustomUserDetails(String username, String password, Collection<? extends GrantedAuthority> authorities) {
+                this.username = username;
+                this.password = password;
+                this.authorities = authorities;
         }
 
         public void setUsername(String username) {
@@ -28,7 +34,7 @@ public class CustomUserDetails implements UserDetails {
         }
 
         @Override
-        public List<GrantedAuthority> getAuthorities() {
+        public Collection<? extends GrantedAuthority> getAuthorities() {
                 return authorities;
         }
 

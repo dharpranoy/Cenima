@@ -1,13 +1,20 @@
 package com.example.movieReview.controllers;
 
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.UUID;
+import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCrypt;
@@ -18,6 +25,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.example.movieReview.models.UserRepository;
+
+import aj.org.objectweb.asm.Type;
+import jakarta.servlet.http.HttpServletRequest;
+
+import com.example.movieReview.auth.CustomUserDetails;
 import com.example.movieReview.models.User;
 
 @Controller
@@ -28,9 +40,13 @@ public class AuthController {
 
   private final AuthenticationManager authenticationManager;
 
-  public AuthController(UserRepository userRepository, AuthenticationManager authenticationManager) {
+  private final RedisTemplate<String, Object> redisTemplate;
+
+  public AuthController(UserRepository userRepository, AuthenticationManager authenticationManager,
+      RedisTemplate<String, Object> redisTemplate) {
     this.userRepository = userRepository;
     this.authenticationManager = authenticationManager;
+    this.redisTemplate = redisTemplate;
   }
 
   @PostMapping("/api/register")
@@ -52,7 +68,7 @@ public class AuthController {
   }
 
   @PostMapping("/api/login")
-  public ResponseEntity<String> signInUser(@RequestBody Map<String, Object> requestBody) {
+  public ResponseEntity<String> signInUser(@RequestBody Map<String, Object> requestBody, HttpServletRequest request) {
 
     String username = (String) requestBody.get("username");
     String password = (String) requestBody.get("password");
@@ -61,8 +77,10 @@ public class AuthController {
 
       Authentication authentication = authenticationManager
           .authenticate(new UsernamePasswordAuthenticationToken(username, password));
+
       SecurityContextHolder.getContext().setAuthentication(authentication);
-      // UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+      System.out.println(((UserDetails) authentication.getPrincipal()).getUsername());
+      redisTemplate.opsForValue().set(request.getSession().getId(), authentication.getPrincipal());
 
     } catch (Exception e) {
       System.out.println(e.getMessage());
@@ -70,6 +88,20 @@ public class AuthController {
     }
     return ResponseEntity.ok("Successfully logged in");
 
+  }
+
+  @GetMapping("/fetch")
+  public ResponseEntity<?> getUserDetails(HttpServletRequest request, Authentication authentication) {
+
+    UserDetails userDetails = (UserDetails) redisTemplate.opsForValue().get(request.getSession().getId());
+    System.out.println(userDetails.getUsername());
+
+    if (!(authentication instanceof AnonymousAuthenticationToken)) {
+      System.out.println(authentication.getName());
+      return ResponseEntity.ok("g");
+    } else {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
   }
 
   @PostMapping("/user/private")

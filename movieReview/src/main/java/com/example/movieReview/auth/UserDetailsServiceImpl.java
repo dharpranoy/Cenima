@@ -37,10 +37,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
       authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
-    CustomUserDetails userDetails = new CustomUserDetails();
-    userDetails.setUsername(user.userName);
-    userDetails.setPassword(user.passwordHash);
-    userDetails.setAuthorities(authorities);
+    CustomUserDetails userDetails = new CustomUserDetails(user.userName, user.passwordHash, authorities);
+    // userDetails.setUsername(user.userName);
+    // userDetails.setPassword(user.passwordHash);
+    // userDetails.setAuthorities(authorities);
 
     return userDetails;
   }
