@@ -6,15 +6,12 @@ import java.util.HashMap;
 import java.util.UUID;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCrypt;
@@ -22,18 +19,20 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.example.movieReview.models.UserRepository;
 
-import aj.org.objectweb.asm.Type;
 import jakarta.servlet.http.HttpServletRequest;
 
-import com.example.movieReview.auth.CustomUserDetails;
+import com.example.movieReview.auth.SimpleGrantedAuthority;
+import com.example.movieReview.config.JwtTokenUtil;
 import com.example.movieReview.models.User;
 
 @Controller
 @ResponseBody
+
 public class AuthController {
 
   private final UserRepository userRepository;
@@ -42,11 +41,14 @@ public class AuthController {
 
   private final RedisTemplate<String, Object> redisTemplate;
 
+  private final JwtTokenUtil jwtTokenUtil;
+
   public AuthController(UserRepository userRepository, AuthenticationManager authenticationManager,
-      RedisTemplate<String, Object> redisTemplate) {
+      RedisTemplate<String, Object> redisTemplate, JwtTokenUtil jwtTokenUtil) {
     this.userRepository = userRepository;
     this.authenticationManager = authenticationManager;
     this.redisTemplate = redisTemplate;
+    this.jwtTokenUtil = jwtTokenUtil;
   }
 
   @PostMapping("/api/register")
@@ -72,36 +74,41 @@ public class AuthController {
 
     String username = (String) requestBody.get("username");
     String password = (String) requestBody.get("password");
-
+    String token;
     try {
 
       Authentication authentication = authenticationManager
           .authenticate(new UsernamePasswordAuthenticationToken(username, password));
 
       SecurityContextHolder.getContext().setAuthentication(authentication);
-      System.out.println(((UserDetails) authentication.getPrincipal()).getUsername());
+      System.out.println(((UserDetails) authentication.getPrincipal()).getAuthorities());
       redisTemplate.opsForValue().set(request.getSession().getId(), authentication.getPrincipal());
+      String sessionId = request.getSession().getId();
+      token = jwtTokenUtil.generateToken(sessionId);
 
     } catch (Exception e) {
       System.out.println(e.getMessage());
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
     }
-    return ResponseEntity.ok("Successfully logged in");
+    return ResponseEntity.ok(token);
 
   }
 
-  @GetMapping("/fetch")
-  public ResponseEntity<?> getUserDetails(HttpServletRequest request, Authentication authentication) {
+  @GetMapping("/api/fetch")
+  public ResponseEntity<?> getUserDetails(@RequestHeader("Authorization") String token) {
 
-    UserDetails userDetails = (UserDetails) redisTemplate.opsForValue().get(request.getSession().getId());
-    System.out.println(userDetails.getUsername());
-
-    if (!(authentication instanceof AnonymousAuthenticationToken)) {
-      System.out.println(authentication.getName());
-      return ResponseEntity.ok("g");
-    } else {
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    if (token.isEmpty() == false) {
+      String actualToken = token.substring(7);
+      if (jwtTokenUtil.validateToken(actualToken)) {
+        String sid = jwtTokenUtil.getSessionIdFromToken(actualToken);
+        Object value = redisTemplate.opsForValue().get(sid);
+        UserDetails userDetails = (UserDetails) value;
+        String authority = userDetails.getAuthorities().iterator().next().getAuthority();
+        System.out.println(authority);
+        return ResponseEntity.ok("duh");
+      }
     }
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authorized");
   }
 
   @PostMapping("/user/private")

@@ -76,7 +76,7 @@ public class SecurityConfig {
         )
         .sessionManagement(session -> session
             .sessionCreationPolicy(SessionCreationPolicy.ALWAYS) // Set session creation policy
-            .maximumSessions(3) // Allow only one session per user
+            .maximumSessions(3)
             .maxSessionsPreventsLogin(false))
         .httpBasic().disable();
     return http.build();

@@ -1,12 +1,10 @@
 package com.example.movieReview.auth;
 
 import com.example.movieReview.models.User;
-import com.example.movieReview.models.Admin;
 import com.example.movieReview.models.UserRepository;
 import com.example.movieReview.models.AdminRepository;
 import java.util.*;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -38,9 +36,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     }
 
     CustomUserDetails userDetails = new CustomUserDetails(user.userName, user.passwordHash, authorities);
-    // userDetails.setUsername(user.userName);
-    // userDetails.setPassword(user.passwordHash);
-    // userDetails.setAuthorities(authorities);
 
     return userDetails;
   }

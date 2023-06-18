@@ -3,8 +3,11 @@ package com.example.movieReview.auth;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.util.*;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CustomUserDetails implements UserDetails {
 
         private String username;
