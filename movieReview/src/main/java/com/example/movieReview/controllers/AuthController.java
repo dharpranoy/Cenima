@@ -4,14 +4,18 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.List;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCrypt;
@@ -26,13 +30,11 @@ import com.example.movieReview.models.UserRepository;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-import com.example.movieReview.auth.SimpleGrantedAuthority;
 import com.example.movieReview.config.JwtTokenUtil;
 import com.example.movieReview.models.User;
 
 @Controller
 @ResponseBody
-
 public class AuthController {
 
   private final UserRepository userRepository;
@@ -82,7 +84,10 @@ public class AuthController {
 
       SecurityContextHolder.getContext().setAuthentication(authentication);
       System.out.println(((UserDetails) authentication.getPrincipal()).getAuthorities());
+
       redisTemplate.opsForValue().set(request.getSession().getId(), authentication.getPrincipal());
+      redisTemplate.expire(request.getSession().getId(), 6, TimeUnit.HOURS);
+
       String sessionId = request.getSession().getId();
       token = jwtTokenUtil.generateToken(sessionId);
 
@@ -103,7 +108,7 @@ public class AuthController {
         String sid = jwtTokenUtil.getSessionIdFromToken(actualToken);
         Object value = redisTemplate.opsForValue().get(sid);
         UserDetails userDetails = (UserDetails) value;
-        String authority = userDetails.getAuthorities().iterator().next().getAuthority();
+        GrantedAuthority authority = userDetails.getAuthorities().iterator().next();
         System.out.println(authority);
         return ResponseEntity.ok("duh");
       }
@@ -111,6 +116,13 @@ public class AuthController {
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authorized");
   }
 
+  @Secured("ROLE_ADMIN")
+  @PostMapping("/admin/protected")
+  public String ProtectedResponse() {
+    return "Protected Entity";
+  }
+
+  @Secured({ "ROLE_USER", "ROLE_ADMIN" })
   @PostMapping("/user/private")
   public String PrivateResponse() {
     return "Private Entity";
