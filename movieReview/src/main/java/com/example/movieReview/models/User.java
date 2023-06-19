@@ -9,17 +9,17 @@ public class User {
   public String userId;
   public String userName;
   public String passwordHash;
-  private long phoneNo;
+  private String emailId;
 
   protected User() {
 
   }
 
-  public User(String userId, String userName, String passwordHash, long phoneNo) {
+  public User(String userId, String userName, String passwordHash, String emailId) {
     this.userId = userId;
     this.userName = userName;
     this.passwordHash = passwordHash;
-    this.phoneNo = phoneNo;
+    this.emailId = emailId;
   }
 
   public void setUserId(String userId) {
@@ -34,8 +34,8 @@ public class User {
     this.passwordHash = passwordHash;
   }
 
-  public void setPhoneNo(long phoneNo) {
-    this.phoneNo = phoneNo;
+  public void setEmailId(String emailId) {
+    this.emailId = emailId;
   }
 
   public String getUserId() {
@@ -50,8 +50,8 @@ public class User {
     return this.passwordHash;
   }
 
-  public String getPhoneNo() {
-    return String.valueOf(this.phoneNo);
+  public String getEmailId() {
+    return this.emailId;
   }
 
 }

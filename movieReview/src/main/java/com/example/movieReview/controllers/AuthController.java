@@ -58,14 +58,18 @@ public class AuthController {
 
     String uName = (String) requestBody.get("username");
     String pWdd = (String) requestBody.get("password");
-    long phoneNo = Long.parseLong(requestBody.get("phoneNo").toString());
+    String email = (String) requestBody.get("email");
 
     if (userRepository.existsByUserName(uName)) {
       return ResponseEntity.badRequest().body("Username already taken");
     }
 
+    if (userRepository.existsByEmailId(email)) {
+      return ResponseEntity.badRequest().body("emailId already exists");
+    }
+
     String uid = UUID.randomUUID().toString();
-    User new_user = new User(uid, uName, BCrypt.hashpw(pWdd, BCrypt.gensalt(12)), phoneNo);
+    User new_user = new User(uid, uName, BCrypt.hashpw(pWdd, BCrypt.gensalt(12)), email);
     userRepository.save(new_user);
     return ResponseEntity.ok("Registration Successfull");
 
