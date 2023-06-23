@@ -103,21 +103,23 @@ public class AuthController {
 
   }
 
-  @GetMapping("/api/fetch")
-  public ResponseEntity<?> getUserDetails(@RequestHeader("Authorization") String token) {
+  @PostMapping("/api/resetpassword")
+  public ResponseEntity<?> ResetCredentials(@RequestBody Map<String, Object> requestBody) {
 
-    if (token.isEmpty() == false) {
-      String actualToken = token.substring(7);
-      if (jwtTokenUtil.validateToken(actualToken)) {
-        String sid = jwtTokenUtil.getSessionIdFromToken(actualToken);
-        Object value = redisTemplate.opsForValue().get(sid);
-        UserDetails userDetails = (UserDetails) value;
-        GrantedAuthority authority = userDetails.getAuthorities().iterator().next();
-        System.out.println(authority);
-        return ResponseEntity.ok("duh");
-      }
+    String username = (String) requestBody.get("username");
+    String email = (String) requestBody.get("email");
+    String newPassword = (String) requestBody.get("password");
+    newPassword = BCrypt.hashpw(newPassword, BCrypt.gensalt(12));
+
+    if (userRepository.existsByUserName(username) && userRepository.existsByEmailId(email)) {
+      User temp_user = userRepository.findByUserName(username).get(0);
+      temp_user.setPasswordHash(newPassword);
+
+      return ResponseEntity.ok("Password Changed Successfully");
     }
-    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authorized");
+
+    return ResponseEntity.badRequest().body("Invalid Request For User");
+
   }
 
   @Secured("ROLE_ADMIN")

@@ -1,9 +1,10 @@
 package com.example.movieReview.models;
 
 import java.util.*;
-import org.springframework.data.repository.CrudRepository;
 
-public interface UserRepository extends CrudRepository<User, String> {
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface UserRepository extends JpaRepository<User, String> {
 
   List<User> findByUserName(String username);
 
