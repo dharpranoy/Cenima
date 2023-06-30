@@ -22,7 +22,7 @@ public class MovieController {
 
   @GetMapping("/api/scrollMovies")
   public List<Movie> GetMoviesAll(@RequestParam("page") int page) {
-    int pageSize = 3;
+    int pageSize = 5;
     int offset = (page - 1) * pageSize;
     int pageNumber = offset / pageSize;
     Pageable pageable = PageRequest.of(pageNumber, pageSize);

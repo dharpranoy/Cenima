@@ -8,7 +8,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.List;
 
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.example.movieReview.models.UserRepository;
 
 import jakarta.servlet.http.HttpServletRequest;
+import net.minidev.json.JSONObject;
 
 import com.example.movieReview.config.JwtTokenUtil;
 import com.example.movieReview.models.User;
@@ -81,6 +84,9 @@ public class AuthController {
     String username = (String) requestBody.get("username");
     String password = (String) requestBody.get("password");
     String token;
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    JSONObject responseObject = new JSONObject();
     try {
 
       Authentication authentication = authenticationManager
@@ -95,11 +101,14 @@ public class AuthController {
       String sessionId = request.getSession().getId();
       token = jwtTokenUtil.generateToken(sessionId);
 
+      responseObject.put("token", token);
+      responseObject.put("user", authentication.getPrincipal());
+
     } catch (Exception e) {
       System.out.println(e.getMessage());
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
     }
-    return ResponseEntity.ok(token);
+    return ResponseEntity.ok().headers(headers).body(responseObject.toString());
 
   }
 
